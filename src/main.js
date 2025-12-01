@@ -6,10 +6,9 @@
  */
 function calculateSimpleRevenue(purchase, _product) {
     // @TODO: Расчет выручки от операции
-  const { discount, sale_price, quantity } = purchase;
-  const discountFactor = 1 - discount / 100;
-  const revenue = sale_price * quantity * discountFactor;
-  return revenue;
+    const discount = purchase.discount || 0;
+    const coefficientSale = 1 - (discount / 100);
+    return purchase.sale_price * purchase.quantity * coefficientSale;
 }
 /**
  * Функция для расчета бонусов
@@ -42,6 +41,7 @@ function analyzeSalesData(data, options) {
     // @TODO: Проверка входных данных
     if (!data ||
         !Array.isArray(data.sellers) || data.sellers.length === 0 ||
+        !Array.isArray(data.customers) || data.customers.length === 0 ||
         !Array.isArray(data.products) || data.products.length === 0 ||
         !Array.isArray(data.purchase_records) || data.purchase_records.length === 0
     ) {
@@ -66,10 +66,10 @@ function analyzeSalesData(data, options) {
     const sellerStats = data.sellers.map(seller => ({
         id: seller.id,
         name: seller.first_name + " " + seller.last_name,
-        revenue: 0,           // сколько реальных денег принёс продавец
-        profit: 0,            // прибыль = выручка − себестоимость
-        sales_count: 0,       // сколько чеков оформил
-        products_sold: {}     // сюда будем записывать: sku → сколько штук продал
+        revenue: 0,
+        profit: 0,
+        sales_count: 0,
+        products_sold: {}
     }));
     // @TODO: Индексация продавцов и товаров для быстрого доступа
     const sellerIndex = Object.fromEntries(
@@ -80,29 +80,26 @@ function analyzeSalesData(data, options) {
         data.products.map(item => [item.sku, item])
     );
     // @TODO: Расчет выручки и прибыли для каждого продавца
-    data.purchase_records.forEach(record => {
-        const seller = sellerIndex[record.seller_id];
-        if (!seller) return;
+  data.purchase_records.forEach((record) => {
+    const seller = sellerIndex[record.seller_id];
+    seller.sales_count++;
+    seller.revenue += record.total_amount;
 
-        seller.sales_count += 1;
+    // Расчёт прибыли для каждого товара
+    record.items.forEach((item) => {
+      const product = productIndex[item.sku];
+      cost = product.purchase_price * item.quantity;
+      revenue = calculateSimpleRevenue(item, product);
+      profit = revenue - cost;
+      seller.profit += profit;
 
-        record.items.forEach(item => {
-            const product = productIndex[item.sku];
-            if (!product) return;
-
-            const cost = product.purchase_price * item.quantity;
-            const revenue = calculateRevenue(item, product);
-            const profitFromItem = revenue - cost;
-
-            seller.profit += profitFromItem;
-            seller.revenue += record.total_amount;
-
-            if (!seller.products_sold[item.sku]) {
-                seller.products_sold[item.sku] = 0;
-            }
-            seller.products_sold[item.sku] += item.quantity;
-        });
+      // Учёт количества проданных товаров
+      if (!seller.products_sold[item.sku]) {
+        seller.products_sold[item.sku] = 0;
+      }
+      seller.products_sold[item.sku] += item.quantity;
     });
+  });
     // @TODO: Сортировка продавцов по прибыли
     sellerStats.sort(function (a, b) {
         return b.profit - a.profit;
