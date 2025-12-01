@@ -8,7 +8,7 @@ function calculateSimpleRevenue(purchase, _product) {
     // @TODO: Расчет выручки от операции
     const discount = purchase.discount || 0;
     const coefficientSale = 1 - (discount / 100);
-    return purchase.sale_price * purchase.quantity * coefficientSale
+    return Number((purchase.sale_price * purchase.quantity * coefficientSale).toFixed(2));
 }
 /**
  * Функция для расчета бонусов
@@ -42,7 +42,7 @@ function analyzeSalesData(data, options) {
     if (!data ||
         !Array.isArray(data.sellers) || data.sellers.length === 0 ||
         !Array.isArray(data.products) || data.products.length === 0 ||
-        !Array.isArray(data.purchase_records)
+        !Array.isArray(data.purchase_records) || data.purchase_records.length === 0
     ) {
         throw new Error('Некорректные входные данные');
     }
@@ -110,7 +110,7 @@ function analyzeSalesData(data, options) {
     sellerStats.forEach((seller, index) => {
         const total = sellerStats.length;
 
-        seller.bonus = calculateBonus(index, total, seller);
+        seller.bonus = Number(calculateBonus(index, total, seller).toFixed(2));
 
         seller.top_products = Object.entries(seller.products_sold)
             .map(([sku, quantity]) => ({ sku, quantity }))
