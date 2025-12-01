@@ -8,7 +8,7 @@ function calculateSimpleRevenue(purchase, _product) {
     // @TODO: Расчет выручки от операции
     const discount = purchase.discount || 0;
     const coefficientSale = 1 - (discount / 100);
-    return Number((purchase.sale_price * purchase.quantity * coefficientSale).toFixed(2));
+    return (purchase.sale_price * purchase.quantity * coefficientSale)
 }
 /**
  * Функция для расчета бонусов
@@ -42,7 +42,7 @@ function analyzeSalesData(data, options) {
     if (!data ||
         !Array.isArray(data.sellers) || data.sellers.length === 0 ||
         !Array.isArray(data.products) || data.products.length === 0 ||
-        !Array.isArray(data.purchase_records) || data.purchase_records.length === 0
+        !Array.isArray(data.purchase_records)
     ) {
         throw new Error('Некорректные входные данные');
     }
@@ -110,7 +110,7 @@ function analyzeSalesData(data, options) {
     sellerStats.forEach((seller, index) => {
         const total = sellerStats.length;
 
-        seller.bonus = Number(calculateBonus(index, total, seller).toFixed(2));
+        seller.bonus = calculateBonus(index, total, seller);
 
         seller.top_products = Object.entries(seller.products_sold)
             .map(([sku, quantity]) => ({ sku, quantity }))
@@ -121,10 +121,10 @@ function analyzeSalesData(data, options) {
     return sellerStats.map(seller => ({
         seller_id: seller.id,
         name: seller.name,
-        revenue: Number(seller.revenue.toFixed(2)),
-        profit: Number(seller.profit.toFixed(2)),
+        revenue: +seller.revenue.toFixed(2),
+        profit: +seller.profit.toFixed(2),
         sales_count: seller.sales_count,
         top_products: seller.top_products,
-        bonus: Number(seller.bonus.toFixed(2))
+        bonus: +seller.bonus.toFixed(2)
     }));
 }
