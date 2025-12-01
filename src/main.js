@@ -94,7 +94,7 @@ function analyzeSalesData(data, options) {
             const profitFromItem = revenue - cost;
 
             seller.profit += profitFromItem;
-            seller.revenue += revenue;
+            seller.revenue += record.total_amount;
 
             if (!seller.products_sold[item.sku]) {
                 seller.products_sold[item.sku] = 0;
