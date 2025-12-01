@@ -41,7 +41,6 @@ function analyzeSalesData(data, options) {
     // @TODO: Проверка входных данных
     if (!data ||
         !Array.isArray(data.sellers) || data.sellers.length === 0 ||
-        !Array.isArray(data.customers) || data.customers.length === 0 ||
         !Array.isArray(data.products) || data.products.length === 0 ||
         !Array.isArray(data.purchase_records) || data.purchase_records.length === 0
     ) {
@@ -80,26 +79,29 @@ function analyzeSalesData(data, options) {
         data.products.map(item => [item.sku, item])
     );
     // @TODO: Расчет выручки и прибыли для каждого продавца
-  data.purchase_records.forEach((record) => {
-    const seller = sellerIndex[record.seller_id];
-    seller.sales_count++;
-    seller.revenue += record.total_amount;
+    data.purchase_records.forEach(record => {
+        const seller = sellerIndex[record.seller_id];
+        if (!seller) return;
 
-    // Расчёт прибыли для каждого товара
-    record.items.forEach((item) => {
-      const product = productIndex[item.sku];
-      cost = product.purchase_price * item.quantity;
-      revenue = calculateSimpleRevenue(item, product);
-      profit = revenue - cost;
-      seller.profit += profit;
+        seller.sales_count += 1;
+        seller.revenue += record.total_amount;
 
-      // Учёт количества проданных товаров
-      if (!seller.products_sold[item.sku]) {
-        seller.products_sold[item.sku] = 0;
-      }
-      seller.products_sold[item.sku] += item.quantity;
+        record.items.forEach(item => {
+            const product = productIndex[item.sku];
+            if (!product) return;
+
+            const cost = product.purchase_price * item.quantity;
+            const revenue = calculateRevenue(item, product);
+            const profitFromItem = revenue - cost;
+
+            seller.profit += profitFromItem;
+
+            if (!seller.products_sold[item.sku]) {
+                seller.products_sold[item.sku] = 0;
+            }
+            seller.products_sold[item.sku] += item.quantity;
+        });
     });
-  });
     // @TODO: Сортировка продавцов по прибыли
     sellerStats.sort(function (a, b) {
         return b.profit - a.profit;
